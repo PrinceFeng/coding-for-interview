@@ -7,7 +7,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description TODO
+ * @Description CyclicBarrier 每一个线程到达栅栏后大家一起前行
  * @Author prince Chen
  * @Date 2019/11/30 17:36
  */
@@ -17,34 +17,40 @@ public class CyclicBarrierTest {
     /**
      * 与CountDownLatch 不同的是，CyclicBarrier各个线程会互相等待彼此完成，而且任务完成后可以回调
      */
-    @Test
-    public void test() throws InterruptedException {
-        CyclicBarrier barrier = new CyclicBarrier(2, () -> {
-            System.out.println("All tasks finished.");
+
+    public static void main(String[] args) {
+        int count = 2;
+        CyclicBarrier barrier = new CyclicBarrier(count, () -> {
+            System.out.println("All parties tripped...");
         });
 
-        new Thread(() -> {
+        for (int i=0; i<count+2; i++) {
+            new Worker(barrier).start();
+        }
+    }
+
+    static class Worker extends Thread {
+        private CyclicBarrier barrier;
+
+        public Worker(CyclicBarrier barrier) {
+            this.barrier = barrier;
+        }
+
+        @Override
+        public void run() {
+            System.out.println(Thread.currentThread().getName() + "到达栅栏");
+            System.out.println(Thread.currentThread().getName() + " parties required: " + barrier.getParties());
+            System.out.println(Thread.currentThread().getName() + " parties waiting: " + barrier.getNumberWaiting());
             try {
-                TimeUnit.SECONDS.sleep(10);
-                System.out.println(" Task A is finished.");
                 barrier.await();
-                System.out.println("A===The other task are all finished...");
+
+                System.out.println(Thread.currentThread().getName() + "大家都到了，冲鸭。。。");
+                TimeUnit.SECONDS.sleep(5);
+                System.out.println(Thread.currentThread().getName() + "执行完成！");
             } catch (InterruptedException | BrokenBarrierException e) {
                 e.printStackTrace();
             }
-        }).start();
 
-        new Thread(() -> {
-            try {
-                TimeUnit.SECONDS.sleep(20);
-                System.out.println(" Task B is finished.");
-                barrier.await();
-                System.out.println("B===The others are finished...");
-            } catch (InterruptedException | BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-        }).start();
-
-        TimeUnit.SECONDS.sleep(30);
+        }
     }
 }
